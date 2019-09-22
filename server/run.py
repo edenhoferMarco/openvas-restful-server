@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_restful import Resource, Api
 from flask import Response
-from OpenvasAPI.connector import OpenvasConnector
+from server.openvas_api.connector import OpenvasConnector
 
 app = Flask(__name__)
 api = Api(app)

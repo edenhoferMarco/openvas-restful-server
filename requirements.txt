@@ -7,6 +7,7 @@ cryptography==2.7
 defusedxml==0.6.0
 Flask==1.1.1
 Flask-RESTful==0.3.7
+gunicorn==19.9.0
 itsdangerous==1.1.0
 Jinja2==2.10.1
 lxml==4.4.1
