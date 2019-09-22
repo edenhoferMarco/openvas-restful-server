@@ -36,5 +36,3 @@ api.add_resource(AliveTest, '/_alive')
 api.add_resource(Scanners, '/_scanners')
 api.add_resource(ScannerByName, '/_scanners/name/<scanner_name>')
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
