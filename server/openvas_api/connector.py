@@ -9,7 +9,7 @@ class OpenvasConnector:
     and abstracts the api calls.
     """
 
-    def __init__(self, *, socket_path='/var/run/openvasmd.sock', username='admin', password='admin'):
+    def __init__(self, socket_path='/var/run/openvasmd.sock', username='admin', password='admin'):
         self.username = username
         self.password = password
         connection = UnixSocketConnection(path=socket_path)
@@ -28,7 +28,7 @@ class OpenvasConnector:
             self.__authenticate__(gmp)
             return etree.tostring(gmp.get_scanner(scanner_id))
 
-    def get_scanners(self, *, filter=None, filter_id=None, trash=None, details=None):
+    def get_scanners(self, filter=None, filter_id=None, trash=None, details=None):
         with self.gmp as gmp:
             self.__authenticate__(gmp)
             return etree.tostring(gmp.get_scanners(filter=filter, filter_id=filter_id, trash=trash, details=details))
