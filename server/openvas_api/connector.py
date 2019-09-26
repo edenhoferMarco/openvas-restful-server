@@ -33,6 +33,16 @@ class OpenvasConnector:
             self.__authenticate__(gmp)
             return etree.tostring(gmp.get_scanners(filter=filter, filter_id=filter_id, trash=trash, details=details))
 
+    def get_configs(self, filter=None, filter_id=None, trash=None, details=None, families=None, preferences=None, tasks=None):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.get_configs(filter=filter, filter_id=filter_id, trash=trash, details=details, preferences=None, tasks=None))
+
+    def get_targets(self, filter=None, filter_id=None, trash=None, tasks=None):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.get_tasks(filter=filter, filter_id=filter_id, trash=trash, tasks=tasks))
+
 
     def random_shit(self):
             print(self.gmp.authenticate('admin', 'admin'))
