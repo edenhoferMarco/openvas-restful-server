@@ -41,7 +41,28 @@ class OpenvasConnector:
     def get_targets(self, filter=None, filter_id=None, trash=None, tasks=None):
         with self.gmp as gmp:
             self.__authenticate__(gmp)
-            return etree.tostring(gmp.get_tasks(filter=filter, filter_id=filter_id, trash=trash, tasks=tasks))
+            return etree.tostring(gmp.get_targets(filter=filter, filter_id=filter_id, trash=trash, tasks=tasks))
+
+    def get_tasks(self, filter=None, filter_id=None, trash=None, details=None, schedules_only=None):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.get_tasks(filter=filter, filter_id=filter_id, trash=trash, details=details, schedules_only=schedules_only))
+
+    def get_alerts(self, filter=None, filter_id=None, trash=None, tasks=None):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.get_alerts(filter=filter, filter_id=filter_id, trash=trash, tasks=tasks))
+
+    def get_port_lists(self, filter=None, filter_id=None, details=None, targets=None, trash=None):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.get_port_lists(filter=filter, filter_id=filter_id, details=details, targets=targets, trash=trash))
+
+    def get_credentials(self, filter=None, filter_id=None, scanners=None, trash=None, targets=None):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.get_credentials(filter=filter, filter_id=filter_id, scanners=scanners, trash=trash, targets=targets))
+
 
 
     def random_shit(self):
