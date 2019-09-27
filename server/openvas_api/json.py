@@ -2,12 +2,9 @@ def get_filter(json_data):
     """
     Returns the value (if available) for the filter key, used for the openvas rest-api, from an json input.
     """
-    name = json_data.get('filter')
+    filter = json_data.get('filter')
 
-    if name != None and len(name) > 0:
-        return name
-    else:
-        return None
+    return validate_string_input(filter)
 
 def get_filter_id(json_data):
     """
@@ -15,10 +12,7 @@ def get_filter_id(json_data):
     """
     filter_id = json_data.get('filter_id')
 
-    if filter_id != None and len(filter_id) > 0:
-        return filter_id
-    else:
-        return None
+    return validate_string_input(filter_id)
 
 def get_trash(json_data):
     """
@@ -26,10 +20,7 @@ def get_trash(json_data):
     """
     trash = json_data.get('trash')
 
-    if trash != None and (trash == 'True' or trash == 'False'):
-        return trash
-    else:
-        return None
+    return validate_bool_input(trash)
 
 def get_details(json_data):
     """
@@ -37,10 +28,7 @@ def get_details(json_data):
     """
     details = json_data.get('details')
 
-    if details != None and (details == 'True' or details == 'False'):
-        return details
-    else:
-        return None
+    return validate_bool_input(details)
 
 def get_scanner_id(json_data):
     """
@@ -48,7 +36,48 @@ def get_scanner_id(json_data):
     """
     scanner_id = json_data.get('scanner_id')
 
-    if scanner_id != None and len(scanner_id) > 0:
-        return scanner_id
+    return validate_string_input(scanner_id)
+
+def get_name(json_data):
+    """
+    Returns the value (if available) for the name key, used for the openvas rest-api, from an json input.
+    """
+
+    name = json_data.get('name')
+
+    return validate_string_input(name)
+
+def get_status(json_data):
+    status = json_data.get('status')
+
+    return validate_string_input(status)
+
+def get_send_host(json_data):
+    send_host = json_data.get('send_host')
+
+    return validate_string_input(send_host)
+
+def get_send_port(json_data):
+    send_port = json_data.get('send_port')
+
+    return validate_string_input(send_port)
+
+def get_send_report_format(json_data):
+    send_report_format = json_data.get('send_report_format')
+
+    return validate_string_input(send_report_format)
+
+
+
+# util methods for input validation
+def validate_string_input(string):
+    if string != None and len(string) > 0:
+        return string
+    else:
+        return None
+
+def validate_bool_input(bool_value):
+    if bool_value != None and (bool_value == 'True' or bool_value == 'False'):
+        return bool_value
     else:
         return None

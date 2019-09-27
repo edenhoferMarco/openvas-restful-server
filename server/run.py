@@ -59,14 +59,13 @@ class GetRequestStrategy(Resource):
         Returns a JSON style response with the keys 'status', 'name' and 'id'. 
         Expects a xml root element from the openvas connector. 
         """
-        id = extract_id_from_xml(xml_root_element)
-        name = extract_name_from_xml(xml_root_element)
+
         status = extract_status_from_xml(xml_root_element)
+        data = extract_data_from_xml(xml_root_element)
 
         return {
             "status": status,
-            "name": name,
-            "id": id
+            "data": data
         }
         
 
@@ -206,22 +205,68 @@ class CredentialsByName(GetRequestStrategy):
         return self.make_json_response(xml_root)
 
 
+class ReportFormats(GetRequestStrategy):
+    def get(self):
+        self.setup()
+        self.api_response = openvas.get_report_formats()
+        
+        return self.return_response()
+
+
+class ReportFormatByName(GetRequestStrategy):
+    def get(self, report_format_name):
+        self.setup()
+        response = openvas.get_report_formats(report_format_name)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
+
+
+class CreateAlert(PostRequestStrategy):
+    def execute_api_call(self):
+        name = json.get_name(self.request_body)
+        method_data = {
+            'send_host' : json.get_send_host(self.request_body),
+            'send_port' : json.get_send_port(self.request_body),
+            'send_report_format' : json.get_send_report_format(self.request_body)
+        }
+        event_data = {
+            'status' : json.get_status(self.request_body)
+        }
+        return openvas.create_xml_report_to_host_alert(name, method_data=method_data, event_data=event_data)
+
+
 def extract_status_from_xml(xml_root_element):
     return xml_root_element.get('status')
 
-def extract_id_from_xml(xml_root_element):
-        return xml_root_element[0].get('id')
+def extract_data_from_xml(xml_root_element):
+    data = []
+
+    for child in xml_root_element:
+        elem = {}
+        elem['name'] = extract_name_from_xml(child)
+        elem['id'] = extract_id_from_xml(child)
+
+        # ensure that fields are populated
+        if elem['name'] and elem['id']:
+            data.append(elem)
+
+    return data
+
+def extract_id_from_xml(xml_element):
+    return xml_element.get('id')
         
-def extract_name_from_xml(xml_root_element):
+def extract_name_from_xml(xml_element):
     name = None
 
-    for child in xml_root_element[0]:
+    for child in xml_element:
         if child.tag == 'name':
             name = child.text
     
     return name
 
 
+# GET routes
 api.add_resource(AliveTest, '/_alive')
 api.add_resource(Scanners, '/_scanners')
 api.add_resource(ScannerByName, '/_scanners/<scanner_name>')
@@ -237,4 +282,9 @@ api.add_resource(PortLists, '/_portlists')
 api.add_resource(PortListByName, '/_portlists/<portlist_name>')
 api.add_resource(Credentials, '/_credentials')
 api.add_resource(CredentialsByName, '/_credentials/<credentials_name>')
+api.add_resource(ReportFormats, '/_reportformats')
+api.add_resource(ReportFormatByName, '/_reportformats/<report_format_name>')
+
+# POST routes
+api.add_resource(CreateAlert, '/_create/alert')
 
