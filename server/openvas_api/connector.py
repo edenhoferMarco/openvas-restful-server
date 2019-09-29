@@ -1,5 +1,5 @@
 from gvm.connections import UnixSocketConnection
-from gvm.protocols.gmpv8 import Gmp, CredentialType, AlertCondition, AlertEvent, AlertMethod
+from gvm.protocols.latest import Gmp, CredentialType, AlertCondition, AlertEvent, AlertMethod
 from lxml import etree
 from gvm.transforms import EtreeCheckCommandTransform
 
