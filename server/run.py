@@ -2,7 +2,7 @@ from flask import Flask
 from flask_restful import Resource, Api
 from flask import Response, request
 from server.openvas_api.connector import OpenvasConnector
-import server.openvas_api.json as json
+import server.openvas_api.jsonutils as json
 from lxml import etree
 
 app = Flask(__name__)
@@ -196,7 +196,7 @@ class Credentials(GetRequestStrategy):
         return self.return_response()
 
 
-class CredentialsByName(GetRequestStrategy):
+class CredentialByName(GetRequestStrategy):
     def get(self, credentials_name):
         self.setup()
         response = openvas.get_port_lists(filter=credentials_name)
@@ -233,7 +233,68 @@ class CreateAlert(PostRequestStrategy):
         event_data = {
             'status' : json.get_status(self.request_body)
         }
+
         return openvas.create_xml_report_to_host_alert(name, method_data=method_data, event_data=event_data)
+
+
+class CreateUsernamePasswortCredential(PostRequestStrategy):
+    def execute_api_call(self):
+        name = json.get_name(self.request_body)
+        login = json.get_login(self.request_body)
+        password = json.get_password(self.request_body)
+        comment = json.get_comment(self.request_body)
+        allow_insecure = json.get_allow_insecure(self.request_body)
+
+        return openvas.create_username_password_credential(name, login, password, comment=comment, allow_insecure=allow_insecure)
+
+
+class CreateTarget(PostRequestStrategy):
+    def execute_api_call(self):
+        name = json.get_name(self.request_body)
+        make_unique = json.get_make_unique(self.request_body) 
+        asset_hosts_filter = json.get_asset_hosts_filter(self.request_body) 
+        hosts = json.get_hosts(self.request_body)
+        comment = json.get_comment(self.request_body)
+        exclude_hosts = json.get_exclude_hosts(self.request_body)
+        ssh_credential_id = json.get_ssh_credential_id(self.request_body)
+        ssh_credential_port = json.get_ssh_credential_port(self.request_body) 
+        alive_test = json.get_alive_test(self.request_body) 
+        reverse_lookup_only = json.get_reverse_lookup_only(self.request_body)
+        reverse_lookup_unify = json.get_reverse_lookup_unify(self.request_body)
+        port_range = json.get_port_range(self.request_body)
+        port_list_id = json.get_port_list_id(self.request_body)
+
+        comment="testing"
+        
+        # hosts_a = hosts.copy()
+
+        return openvas.create_target(
+            name,
+            make_unique=make_unique,
+            asset_hosts_filter=asset_hosts_filter,
+            hosts=hosts,
+            comment=comment,
+            exclude_hosts=exclude_hosts,
+            ssh_credential_id=ssh_credential_id,
+            ssh_credential_port=ssh_credential_port,
+            alive_test=alive_test,
+            reverse_lookup_only=reverse_lookup_only,
+            reverse_lookup_unify=reverse_lookup_unify,
+            port_range=port_range,
+            port_list_id=port_list_id
+        )
+
+    
+class CreateTask(PostRequestStrategy):
+    def execute_api_call(self):
+        name = json.get_name(self.request_body)
+        config_id = json.get_config_id(self.request_body)
+        target_id = json.get_target_id(self.request_body)
+        scanner_id = json.get_scanner_id(self.request_body)
+        alert_ids = json.get_alert_ids(self.request_body)
+        comment = json.get_comment(self.request_body)
+
+        return openvas.create_task(name, config_id, target_id, scanner_id, alert_ids=alert_ids, comment=comment)
 
 
 def extract_status_from_xml(xml_root_element):
@@ -281,10 +342,13 @@ api.add_resource(AlertByName, '/_alerts/<alert_name>')
 api.add_resource(PortLists, '/_portlists')
 api.add_resource(PortListByName, '/_portlists/<portlist_name>')
 api.add_resource(Credentials, '/_credentials')
-api.add_resource(CredentialsByName, '/_credentials/<credentials_name>')
+api.add_resource(CredentialByName, '/_credentials/<credentials_name>')
 api.add_resource(ReportFormats, '/_reportformats')
 api.add_resource(ReportFormatByName, '/_reportformats/<report_format_name>')
 
 # POST routes
 api.add_resource(CreateAlert, '/_create/alert')
+api.add_resource(CreateUsernamePasswortCredential, '/_create/username_password_credential')
+api.add_resource(CreateTarget, '/_create/target')
+api.add_resource(CreateTask, '/_create/task')
 
