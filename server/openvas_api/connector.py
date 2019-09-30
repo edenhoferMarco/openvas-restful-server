@@ -1,5 +1,5 @@
 from gvm.connections import UnixSocketConnection
-from gvm.protocols.gmpv8 import Gmp, CredentialType, AlertCondition, AlertEvent, AlertMethod
+from gvm.protocols.latest import Gmp, CredentialType, AlertCondition, AlertEvent, AlertMethod
 from lxml import etree
 from gvm.transforms import EtreeCheckCommandTransform
 
@@ -151,6 +151,11 @@ class OpenvasConnector:
                 observers=observers,
                 preferences=preferences
             ))
+
+    def start_task(self, task_id):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.start_task(task_id))
 
     def random_shit(self):
             print(self.gmp.authenticate('admin', 'admin'))

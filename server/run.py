@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_restful import Resource, Api
 from flask import Response, request
+from server.keywords import RequestKeywordType, ResponseKeywordType, RequestEventDataType, RequestMethodDataType
 from server.openvas_api.connector import OpenvasConnector
 import server.openvas_api.jsonutils as json
 from lxml import etree
@@ -20,8 +21,6 @@ class PostRequestStrategy(Resource):
 
     def setup(self):
         self.request_body = request.get_json()
-        self.mimetype = 'application/xml'
-        self.api_response = "NOT IMPLEMENTED"
 
     def execute_api_call(self):
         """
@@ -30,13 +29,21 @@ class PostRequestStrategy(Resource):
         """
         pass
 
-    def return_response(self):
-        return Response(response=self.api_response, mimetype=self.mimetype)
+    def make_json_response(self, xml_root_element):
+        status = extract_status_from_xml(xml_root_element)
+        status_text = extract_status_text_from_xml(xml_root_element)
+        id = extract_id_from_xml(xml_root_element)
+
+        return {
+            ResponseKeywordType.STATUS.value: status,
+            ResponseKeywordType.STATUS_TEXT.value: status_text,
+            ResponseKeywordType.ID.value: id
+        }
+
 
     def post(self):
         self.setup()
-        self.api_response = self.execute_api_call()
-        return self.return_response()
+        return self.execute_api_call()
 
 
 class GetRequestStrategy(Resource):
@@ -56,7 +63,8 @@ class GetRequestStrategy(Resource):
 
     def make_json_response(self, xml_root_element):
         """
-        Returns a JSON style response with the keys 'status', 'name' and 'id'. 
+        Returns a JSON style response with the parrent keys 'status' 
+        and 'data'. 'data' has 'name' + 'id' as childs. 
         Expects a xml root element from the openvas connector. 
         """
 
@@ -64,8 +72,8 @@ class GetRequestStrategy(Resource):
         data = extract_data_from_xml(xml_root_element)
 
         return {
-            "status": status,
-            "data": data
+            ResponseKeywordType.STATUS.value: status,
+            ResponseKeywordType.DATA.value: data
         }
         
 
@@ -101,8 +109,6 @@ class ScannerByName(GetRequestStrategy):
         return self.make_json_response(xml_root)
 
     
-
-
 class Configs(GetRequestStrategy):
     def get(self):
         self.setup()
@@ -197,9 +203,9 @@ class Credentials(GetRequestStrategy):
 
 
 class CredentialByName(GetRequestStrategy):
-    def get(self, credentials_name):
+    def get(self, credential_name):
         self.setup()
-        response = openvas.get_port_lists(filter=credentials_name)
+        response = openvas.get_credentials(filter=credential_name)
         xml_root = etree.fromstring(response)
 
         return self.make_json_response(xml_root)
@@ -226,12 +232,12 @@ class CreateAlert(PostRequestStrategy):
     def execute_api_call(self):
         name = json.get_name(self.request_body)
         method_data = {
-            'send_host' : json.get_send_host(self.request_body),
-            'send_port' : json.get_send_port(self.request_body),
-            'send_report_format' : json.get_send_report_format(self.request_body)
+            RequestMethodDataType.SEND_HOST.value : json.get_send_host(self.request_body),
+            RequestMethodDataType.SEND_PORT.value : json.get_send_port(self.request_body),
+            RequestMethodDataType.SEND_REPORT_FORMAT.value : json.get_send_report_format(self.request_body)
         }
         event_data = {
-            'status' : json.get_status(self.request_body)
+            RequestEventDataType.STATUS.value : json.get_status(self.request_body)
         }
 
         return openvas.create_xml_report_to_host_alert(name, method_data=method_data, event_data=event_data)
@@ -245,7 +251,10 @@ class CreateUsernamePasswortCredential(PostRequestStrategy):
         comment = json.get_comment(self.request_body)
         allow_insecure = json.get_allow_insecure(self.request_body)
 
-        return openvas.create_username_password_credential(name, login, password, comment=comment, allow_insecure=allow_insecure)
+        response = openvas.create_username_password_credential(name, login, password, comment=comment, allow_insecure=allow_insecure)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
 
 
 class CreateTarget(PostRequestStrategy):
@@ -264,11 +273,7 @@ class CreateTarget(PostRequestStrategy):
         port_range = json.get_port_range(self.request_body)
         port_list_id = json.get_port_list_id(self.request_body)
 
-        comment="testing"
-        
-        # hosts_a = hosts.copy()
-
-        return openvas.create_target(
+        response = openvas.create_target(
             name,
             make_unique=make_unique,
             asset_hosts_filter=asset_hosts_filter,
@@ -284,6 +289,10 @@ class CreateTarget(PostRequestStrategy):
             port_list_id=port_list_id
         )
 
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
+
     
 class CreateTask(PostRequestStrategy):
     def execute_api_call(self):
@@ -294,34 +303,49 @@ class CreateTask(PostRequestStrategy):
         alert_ids = json.get_alert_ids(self.request_body)
         comment = json.get_comment(self.request_body)
 
-        return openvas.create_task(name, config_id, target_id, scanner_id, alert_ids=alert_ids, comment=comment)
+        response = openvas.create_task(name, config_id, target_id, scanner_id, alert_ids=alert_ids, comment=comment)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
+
+class StartTask(PostRequestStrategy):
+    def execute_api_call(self):
+        task_id = json.get_task_id(self.request_body)
+
+        response = openvas.start_task(task_id)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
 
 
 def extract_status_from_xml(xml_root_element):
-    return xml_root_element.get('status')
+    return xml_root_element.get(ResponseKeywordType.STATUS.value)
+
+def extract_status_text_from_xml(xml_root_element):
+    return xml_root_element.get(ResponseKeywordType.STATUS_TEXT.value)
 
 def extract_data_from_xml(xml_root_element):
     data = []
 
     for child in xml_root_element:
         elem = {}
-        elem['name'] = extract_name_from_xml(child)
-        elem['id'] = extract_id_from_xml(child)
+        elem[ResponseKeywordType.NAME.value] = extract_name_from_xml(child)
+        elem[ResponseKeywordType.ID.value] = extract_id_from_xml(child)
 
         # ensure that fields are populated
-        if elem['name'] and elem['id']:
+        if elem[ResponseKeywordType.NAME.value] and elem[ResponseKeywordType.ID.value]:
             data.append(elem)
 
     return data
 
 def extract_id_from_xml(xml_element):
-    return xml_element.get('id')
+    return xml_element.get(ResponseKeywordType.ID.value)
         
 def extract_name_from_xml(xml_element):
     name = None
 
     for child in xml_element:
-        if child.tag == 'name':
+        if child.tag == ResponseKeywordType.NAME.value:
             name = child.text
     
     return name
@@ -342,7 +366,7 @@ api.add_resource(AlertByName, '/_alerts/<alert_name>')
 api.add_resource(PortLists, '/_portlists')
 api.add_resource(PortListByName, '/_portlists/<portlist_name>')
 api.add_resource(Credentials, '/_credentials')
-api.add_resource(CredentialByName, '/_credentials/<credentials_name>')
+api.add_resource(CredentialByName, '/_credentials/<credential_name>')
 api.add_resource(ReportFormats, '/_reportformats')
 api.add_resource(ReportFormatByName, '/_reportformats/<report_format_name>')
 
@@ -351,4 +375,5 @@ api.add_resource(CreateAlert, '/_create/alert')
 api.add_resource(CreateUsernamePasswortCredential, '/_create/username_password_credential')
 api.add_resource(CreateTarget, '/_create/target')
 api.add_resource(CreateTask, '/_create/task')
+api.add_resource(StartTask, '/_start/task')
 
