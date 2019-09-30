@@ -21,8 +21,6 @@ class PostRequestStrategy(Resource):
 
     def setup(self):
         self.request_body = request.get_json()
-        self.mimetype = 'application/xml'
-        self.api_response = "NOT IMPLEMENTED"
 
     def execute_api_call(self):
         """
@@ -31,13 +29,21 @@ class PostRequestStrategy(Resource):
         """
         pass
 
-    def return_response(self):
-        return Response(response=self.api_response, mimetype=self.mimetype)
+    def make_json_response(self, xml_root_element):
+        status = extract_status_from_xml(xml_root_element)
+        status_text = extract_status_text_from_xml(xml_root_element)
+        id = extract_id_from_xml(xml_root_element)
+
+        return {
+            ResponseKeywordType.STATUS.value: status,
+            ResponseKeywordType.STATUS_TEXT.value: status_text,
+            ResponseKeywordType.ID.value: id
+        }
+
 
     def post(self):
         self.setup()
-        self.api_response = self.execute_api_call()
-        return self.return_response()
+        return self.execute_api_call()
 
 
 class GetRequestStrategy(Resource):
@@ -103,8 +109,6 @@ class ScannerByName(GetRequestStrategy):
         return self.make_json_response(xml_root)
 
     
-
-
 class Configs(GetRequestStrategy):
     def get(self):
         self.setup()
@@ -247,7 +251,10 @@ class CreateUsernamePasswortCredential(PostRequestStrategy):
         comment = json.get_comment(self.request_body)
         allow_insecure = json.get_allow_insecure(self.request_body)
 
-        return openvas.create_username_password_credential(name, login, password, comment=comment, allow_insecure=allow_insecure)
+        response = openvas.create_username_password_credential(name, login, password, comment=comment, allow_insecure=allow_insecure)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
 
 
 class CreateTarget(PostRequestStrategy):
@@ -266,7 +273,7 @@ class CreateTarget(PostRequestStrategy):
         port_range = json.get_port_range(self.request_body)
         port_list_id = json.get_port_list_id(self.request_body)
 
-        return openvas.create_target(
+        response = openvas.create_target(
             name,
             make_unique=make_unique,
             asset_hosts_filter=asset_hosts_filter,
@@ -282,6 +289,10 @@ class CreateTarget(PostRequestStrategy):
             port_list_id=port_list_id
         )
 
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
+
     
 class CreateTask(PostRequestStrategy):
     def execute_api_call(self):
@@ -292,11 +303,26 @@ class CreateTask(PostRequestStrategy):
         alert_ids = json.get_alert_ids(self.request_body)
         comment = json.get_comment(self.request_body)
 
-        return openvas.create_task(name, config_id, target_id, scanner_id, alert_ids=alert_ids, comment=comment)
+        response = openvas.create_task(name, config_id, target_id, scanner_id, alert_ids=alert_ids, comment=comment)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
+
+class StartTask(PostRequestStrategy):
+    def execute_api_call(self):
+        task_id = json.get_task_id(self.request_body)
+
+        response = openvas.start_task(task_id)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
 
 
 def extract_status_from_xml(xml_root_element):
     return xml_root_element.get(ResponseKeywordType.STATUS.value)
+
+def extract_status_text_from_xml(xml_root_element):
+    return xml_root_element.get(ResponseKeywordType.STATUS_TEXT.value)
 
 def extract_data_from_xml(xml_root_element):
     data = []
@@ -349,4 +375,5 @@ api.add_resource(CreateAlert, '/_create/alert')
 api.add_resource(CreateUsernamePasswortCredential, '/_create/username_password_credential')
 api.add_resource(CreateTarget, '/_create/target')
 api.add_resource(CreateTask, '/_create/task')
+api.add_resource(StartTask, '/_start/task')
 

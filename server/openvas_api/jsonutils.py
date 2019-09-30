@@ -192,7 +192,10 @@ def get_port_list_id(json_data):
 
     return validate_string_input(port_list_id)
 
+def get_task_id(json_data):
+    task_id = json_data.get(RequestKeywordType.TASK_ID.value)
 
+    return validate_string_input(task_id)
 
 # util methods for input validation.
 def validate_string_input(string):

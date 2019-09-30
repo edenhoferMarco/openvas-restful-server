@@ -152,6 +152,11 @@ class OpenvasConnector:
                 preferences=preferences
             ))
 
+    def start_task(self, task_id):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.start_task(task_id))
+
     def random_shit(self):
             print(self.gmp.authenticate('admin', 'admin'))
             root_node = gmp.get_scanners()

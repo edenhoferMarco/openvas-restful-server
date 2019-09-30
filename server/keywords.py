@@ -30,6 +30,7 @@ class RequestKeywordType(Enum):
     REVERSE_LOOKUP_UNIFY = 'reverse_lookup_unify'
     PORT_RANGE = 'port_range'
     PORT_LIST_ID = 'port_list_id'
+    TASK_ID = 'task_id'
 
 
 class RequestMethodDataType(Enum):
@@ -51,4 +52,5 @@ class ResponseKeywordType(Enum):
     NAME = 'name'
     ID = 'id'
     STATUS = 'status'
+    STATUS_TEXT = 'status_text'
     DATA = 'data'
