@@ -31,12 +31,22 @@ class RequestKeywordType(Enum):
     PORT_RANGE = 'port_range'
     PORT_LIST_ID = 'port_list_id'
     TASK_ID = 'task_id'
+    REPORT_ID = 'report_id'
+    REPORT_FORMAT_ID = 'report_format_id'
 
 
 class RequestMethodDataType(Enum):
+    # Keywords for Send to host method
     SEND_HOST = 'send_host'
     SEND_PORT = 'send_port'
     SEND_REPORT_FORMAT = 'send_repot_format'
+
+    # Keywords for SCP method
+    SCP_REPORT_FORMAT = "scp_report_format"
+    SCP_PATH = "scp_path"
+    SCP_KNOWN_HOSTS = "scp_known_hosts"
+    SCP_HOST = "scp_host"
+    SCP_CREDENTIAL = "scp_credential"
 
 
 class RequestEventDataType(Enum):

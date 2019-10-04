@@ -197,6 +197,21 @@ def get_task_id(json_data):
 
     return validate_string_input(task_id)
 
+def get_report_id(json_data):
+    report_id = json_data.get(RequestKeywordType.REPORT_ID.value)
+
+    return validate_string_input(report_id)
+
+def get_report_format_id(json_data):
+    report_format_id = json_data.get(RequestKeywordType.REPORT_FORMAT_ID.value)
+
+    return validate_string_input(report_format_id)
+
+def get_string_data(json_data, keyword):
+    value = json_data.get(keyword)
+
+    return validate_string_input(value)
+
 # util methods for input validation.
 def validate_string_input(string):
     if string:

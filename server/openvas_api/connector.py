@@ -68,6 +68,12 @@ class OpenvasConnector:
             self.__authenticate__(gmp)
             return etree.tostring(gmp.get_credentials(filter=filter, filter_id=filter_id, scanners=scanners, trash=trash, targets=targets))
 
+    def get_reports(self, filter=None, filter_id=None, note_details=None, override_details=None, no_details=None):
+        with self.gmp as gmp:
+            self.__authenticate__(gmp)
+            return etree.tostring(gmp.get_reports(filter=filter, filter_id=filter_id, note_details=note_details, override_details=override_details,
+                no_details=no_details))
+
     def create_credential(self, name, credential_type, comment=None, allow_insecure=None, certificate=None, key_phrase=None, private_key=None, 
                 login=None, password=None,auth_algorithm=None, community=None, privacy_algorithm=None, privacy_password=None, public_key=None):
        
@@ -132,6 +138,13 @@ class OpenvasConnector:
 
         return self.create_alert(name, condition, event, method, method_data=method_data, event_data=event_data)
 
+    def create_scp_alert(self, name, method_data=None, event_data=None, condition_data=None, filter_id=None, comment=None):
+        condition = AlertCondition.ALWAYS
+        event = AlertEvent.TASK_RUN_STATUS_CHANGED
+        method = AlertMethod.SCP
+
+        return self.create_alert(name, condition, event, method, method_data=method_data, event_data=event_data)
+
     def create_task(self, name, config_id, target_id, scanner_id, alterable=None, hosts_ordering=None, schedule_id=None, alert_ids=None,
             comment=None, schedule_periods=None, observers=None, preferences=None):
 
@@ -157,17 +170,5 @@ class OpenvasConnector:
             self.__authenticate__(gmp)
             return etree.tostring(gmp.start_task(task_id))
 
-    def random_shit(self):
-            print(self.gmp.authenticate('admin', 'admin'))
-            root_node = gmp.get_scanners()
 
-            # find all scanners
-            scanners = root_node.findall('scanner')
-
-            for scanner in scanners:
-                print(etree.tostring(scanner, pretty_print=True))
-                names = scanner.findall('name')
-
-                for name in names:
-                    print(name.text)
 
