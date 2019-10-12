@@ -228,7 +228,15 @@ class ReportFormatByName(GetRequestStrategy):
         return self.make_json_response(xml_root)
 
 
-class CreateAlert(PostRequestStrategy):
+class Reports(GetRequestStrategy):
+    def get(self):
+        self.setup()
+        self.api_response = openvas.get_reports()
+
+        return self.return_response()
+
+
+class CreateSendToHostAlert(PostRequestStrategy):
     def execute_api_call(self):
         name = json.get_name(self.request_body)
         method_data = {
@@ -240,7 +248,37 @@ class CreateAlert(PostRequestStrategy):
             RequestEventDataType.STATUS.value : json.get_status(self.request_body)
         }
 
-        return openvas.create_xml_report_to_host_alert(name, method_data=method_data, event_data=event_data)
+        response = openvas.create_xml_report_to_host_alert(name, method_data=method_data, event_data=event_data)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
+
+class CreateScpAlert(PostRequestStrategy):
+    def execute_api_call(self):
+        name = json.get_name(self.request_body)
+
+        scp_credential_key = RequestMethodDataType.SCP_CREDENTIAL.value
+        scp_path_key = RequestMethodDataType.SCP_PATH.value
+        scp_report_format_key = RequestMethodDataType.SCP_REPORT_FORMAT.value
+        scp_known_hosts_key = RequestMethodDataType.SCP_KNOWN_HOSTS.value
+        scp_host_key = RequestMethodDataType.SCP_HOST.value
+
+        method_data = {
+            scp_credential_key : json.get_string_data(self.request_body, scp_credential_key),
+            scp_host_key : json.get_string_data(self.request_body, scp_host_key),
+            scp_report_format_key : json.get_string_data(self.request_body, scp_report_format_key),
+            scp_path_key : json.get_string_data(self.request_body, scp_path_key),
+            scp_known_hosts_key : json.get_string_data(self.request_body, scp_known_hosts_key)
+        }
+
+        event_data = {
+            RequestEventDataType.STATUS.value : json.get_status(self.request_body)
+        }
+
+        response = openvas.create_scp_alert(name, method_data=method_data, event_data=event_data)
+        xml_root = etree.fromstring(response)
+
+        return self.make_json_response(xml_root)
 
 
 class CreateUsernamePasswortCredential(PostRequestStrategy):
@@ -318,6 +356,13 @@ class StartTask(PostRequestStrategy):
         return self.make_json_response(xml_root)
 
 
+def get_id_by_name(elements, name):
+    for elem in elements:
+        if (elem[ResponseKeywordType.NAME.value].upper() == name.upper()):
+            return elem[ResponseKeywordType.ID.value]
+
+    return None    
+
 def extract_status_from_xml(xml_root_element):
     return xml_root_element.get(ResponseKeywordType.STATUS.value)
 
@@ -369,9 +414,11 @@ api.add_resource(Credentials, '/_credentials')
 api.add_resource(CredentialByName, '/_credentials/<credential_name>')
 api.add_resource(ReportFormats, '/_reportformats')
 api.add_resource(ReportFormatByName, '/_reportformats/<report_format_name>')
+api.add_resource(Reports, '/_reports')
 
 # POST routes
-api.add_resource(CreateAlert, '/_create/alert')
+api.add_resource(CreateSendToHostAlert, '/_create/alert/send_to_host')
+api.add_resource(CreateScpAlert, '/_create/alert/scp')
 api.add_resource(CreateUsernamePasswortCredential, '/_create/username_password_credential')
 api.add_resource(CreateTarget, '/_create/target')
 api.add_resource(CreateTask, '/_create/task')
